@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orion Stream - Watch Movies & Series</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            glow: '#818cf8',
+                        },
+                        dark: {
+                            bg: '#090d16',
+                            card: '#121827',
+                            border: '#1f293d',
+                            accent: '#1e293b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090d16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f293d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4f46e5;
+        }
+        
+        .glass-header {
+            background: rgba(9, 13, 22, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .glass-card {
+            background: rgba(18, 24, 39, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glow-effect {
+            box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.4);
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-dark-bg text-gray-100 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Top Navigation Bar -->
+    <header class="fixed top-0 left-0 right-0 z-40 glass-header border-b border-dark-border/50 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+            
+            <!-- Logo -->
+            <div class="flex items-center gap-8">
+                <a href="#" onclick="switchTab('home')" class="flex items-center gap-2 text-2xl font-extrabold tracking-wider text-white">
+                    <span class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                        <i class="fa-solid font-bold fa-play text-lg ml-0.5"></i>
+                    </span>
+                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-brand-glow">ORION</span><span class="text-brand-500 font-light">STREAM</span>
+                </a>
+
+                <!-- Desktop Navigation Links -->
+                <nav class="hidden md:flex items-center gap-1 font-medium text-sm">
+                    <button onclick="switchTab('home')" id="nav-home" class="px-4 py-2 rounded-lg text-white bg-brand-600/30 font-semibold border border-brand-500/30 transition">
+                        Home
+                    </button>
+                    <button onclick="switchTab('movies')" id="nav-movies" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-accent/50 transition">
+                        Movies
+                    </button>
+                    <button onclick="switchTab('series')" id="nav-series" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-accent/50 transition">
+                        TV Shows
+                    </button>
+                    <button onclick="switchTab('watchlist')" id="nav-watchlist" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-accent/50 transition flex items-center gap-2">
+                        My List <span id="watchlist-badge" class="bg-brand-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Search & User Actions -->
+            <div class="flex items-center gap-3">
+                <!-- Search Box -->
+                <div class="relative flex-1 sm:w-64 md:w-80">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="Search movies, TV series, actors..." 
+                        class="w-full bg-dark-card border border-dark-border rounded-xl pl-10 pr-9 py-2 text-sm text-gray-200 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition placeholder-gray-500">
+                    <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-xs">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- AI Recommendation Toggle Button -->
+                <button onclick="toggleAiModal()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-brand-600 text-white text-sm font-medium hover:opacity-90 transition shadow-md shadow-indigo-600/20">
+                    <i class="fa-solid fa-wand-magic-sparkles text-yellow-300"></i>
+                    <span class="hidden sm:inline">AI Movie Assistant</span>
+                </button>
+
+                <!-- Profile Dropdown Avatar -->
+                <div class="relative group">
+                    <button class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 p-0.5 focus:outline-none">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150" alt="Avatar" class="w-full h-full object-cover rounded-[10px]">
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Bar -->
+        <div class="md:hidden flex items-center justify-around border-t border-dark-border/40 py-2.5 px-2 bg-dark-bg/90">
+            <button onclick="switchTab('home')" class="flex flex-col items-center gap-1 text-xs text-brand-500">
+                <i class="fa-solid fa-house text-base"></i> Home
+            </button>
+            <button onclick="switchTab('movies')" class="flex flex-col items-center gap-1 text-xs text-gray-400 hover:text-white">
+                <i class="fa-solid fa-film text-base"></i> Movies
+            </button>
+            <button onclick="switchTab('series')" class="flex flex-col items-center gap-1 text-xs text-gray-400 hover:text-white">
+                <i class="fa-solid fa-tv text-base"></i> Series
+            </button>
+            <button onclick="switchTab('watchlist')" class="flex flex-col items-center gap-1 text-xs text-gray-400 hover:text-white">
+                <i class="fa-solid fa-bookmark text-base"></i> My List
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow pt-24 pb-16 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Search Results Header (Hidden by Default) -->
+        <div id="searchResultsSection" class="hidden mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-2xl font-bold flex items-center gap-3">
+                    Search Results for "<span id="searchQueryText" class="text-brand-glow"></span>"
+                </h2>
+                <span id="searchResultCount" class="text-sm text-gray-400">0 titles found</span>
+            </div>
+            <div id="searchResultsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+                <!-- Search cards populated by JS -->
+            </div>
+        </div>
+
+        <!-- Default App View Content -->
+        <div id="mainContentView">
+            
+            <!-- Hero Spotlight Carousel Banner -->
+            <section class="relative w-full rounded-3xl overflow-hidden mb-12 border border-dark-border shadow-2xl bg-dark-card">
+                <div id="heroBg" class="relative h-[380px] sm:h-[460px] md:h-[520px] w-full bg-cover bg-center transition-all duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-dark-bg via-dark-bg/60 to-transparent"></div>
+                    <div class="absolute inset-0 bg-gradient-to-r from-dark-bg via-dark-bg/80 to-transparent"></div>
+                    
+                    <div class="absolute bottom-0 left-0 p-6 sm:p-10 md:p-14 max-w-2xl z-10">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span id="heroBadge" class="px-3 py-1 bg-brand-600 text-white text-xs font-extrabold tracking-wider rounded-full uppercase">Featured Spotlight</span>
+                            <span id="heroRating" class="flex items-center gap-1 text-amber-400 text-sm font-semibold">
+                                <i class="fa-solid fa-star"></i> 8.9
+                            </span>
+                            <span id="heroYear" class="text-gray-300 text-sm font-medium">2024</span>
+                        </div>
+                        <h1 id="heroTitle" class="text-3xl sm:text-5xl font-black text-white leading-tight mb-3 tracking-tight">
+                            Cyberpunk 2099: Cyber Neon
+                        </h1>
+                        <p id="heroDesc" class="text-gray-300 text-sm sm:text-base line-clamp-3 mb-6 font-normal">
+                            In a dystopian mega-city controlled by rogue synth AI, a lone detective uncovers a conspiracy that spans the digital cosmos and threatens mankind.
+                        </p>
+                        
+                        <div class="flex items-center flex-wrap gap-4">
+                            <button id="heroPlayBtn" onclick="" class="flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold transition shadow-lg glow-effect">
+                                <i class="fa-solid fa-play text-lg"></i> Watch Now
+                            </button>
+                            <button id="heroWatchlistBtn" onclick="" class="flex items-center gap-2.5 px-6 py-3.5 rounded-xl glass-card hover:bg-white/10 text-white font-medium transition">
+                                <i class="fa-solid fa-plus text-lg"></i> Add to Watchlist
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Carousel Controls -->
+                <div class="absolute right-6 bottom-6 hidden sm:flex items-center gap-2 z-20">
+                    <button onclick="prevHero()" class="w-10 h-10 rounded-full glass-card flex items-center justify-center text-white hover:bg-brand-600 transition">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <button onclick="nextHero()" class="w-10 h-10 rounded-full glass-card flex items-center justify-center text-white hover:bg-brand-600 transition">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Genres / Category Filters Bar -->
+            <section class="mb-10">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-200">Browse by Genre</h3>
+                </div>
+                <div class="flex items-center gap-3 overflow-x-auto pb-2 hide-scrollbar">
+                    <button onclick="filterGenre('all')" class="genre-btn active px-5 py-2.5 rounded-xl text-sm font-medium bg-brand-600 text-white whitespace-nowrap transition">
+                        🔥 All Trending
+                    </button>
+                    <button onclick="filterGenre('Action')" class="genre-btn px-5 py-2.5 rounded-xl text-sm font-medium bg-dark-card hover:bg-dark-accent border border-dark-border text-gray-300 whitespace-nowrap transition">
+                        ⚔️ Action & Sci-Fi
+                    </button>
+                    <button onclick="filterGenre('Drama')" class="genre-btn px-5 py-2.5 rounded-xl text-sm font-medium bg-dark-card hover:bg-dark-accent border border-dark-border text-gray-300 whitespace-nowrap transition">
+                        🎭 Drama & Mystery
+                    </button>
+                    <button onclick="filterGenre('Anime')" class="genre-btn px-5 py-2.5 rounded-xl text-sm font-medium bg-dark-card hover:bg-dark-accent border border-dark-border text-gray-300 whitespace-nowrap transition">
+                        ⛩️ Anime
+                    </button>
+                    <button onclick="filterGenre('Comedy')" class="genre-btn px-5 py-2.5 rounded-xl text-sm font-medium bg-dark-card hover:bg-dark-accent border border-dark-border text-gray-300 whitespace-nowrap transition">
+                        😂 Comedy
+                    </button>
+                    <button onclick="filterGenre('Horror')" class="genre-btn px-5 py-2.5 rounded-xl text-sm font-medium bg-dark-card hover:bg-dark-accent border border-dark-border text-gray-300 whitespace-nowrap transition">
+                        👻 Thriller & Horror
+                    </button>
+                </div>
+            </section>
+
+            <!-- Main Content Rows -->
+            <div id="contentSections" class="space-y-12">
+                
+                <!-- Section 1: Popular Movies -->
+                <section>
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-white tracking-wide">Popular Movies</h2>
+                            <p class="text-xs sm:text-sm text-gray-400">Blockbusters everyone is watching right now</p>
+                        </div>
+                    </div>
+                    <div id="popularMoviesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+                        <!-- Movie Cards populated by JS -->
+                    </div>
+                </section>
+
+                <!-- Section 2: Trending TV Series -->
+                <section>
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-white tracking-wide">Trending TV Series</h2>
+                            <p class="text-xs sm:text-sm text-gray-400">Binge-worthy shows with new episodes</p>
+                        </div>
+                    </div>
+                    <div id="tvSeriesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+                        <!-- TV Series Cards populated by JS -->
+                    </div>
+                </section>
+
+                <!-- Section 3: Top Rated -->
+                <section class="mb-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-white tracking-wide">Critically Acclaimed</h2>
+                            <p class="text-xs sm:text-sm text-gray-400">Masterpieces loved by fans and critics</p>
+                        </div>
+                    </div>
+                    <div id="topRatedGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+                        <!-- Top Rated Cards populated by JS -->
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- Empty Watchlist View (shown when on watchlist tab & empty) -->
+            <div id="watchlistSection" class="hidden space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Your Saved Watchlist</h2>
+                        <p class="text-sm text-gray-400">Movies and shows saved to watch later</p>
+                    </div>
+                </div>
+                <div id="watchlistGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+                    <!-- Watchlist items dynamically loaded -->
+                </div>
+                <div id="emptyWatchlistMsg" class="hidden text-center py-20 bg-dark-card/40 rounded-3xl border border-dashed border-dark-border">
+                    <i class="fa-regular fa-bookmark text-5xl text-gray-600 mb-4"></i>
+                    <h3 class="text-lg font-bold text-gray-300 mb-1">Your Watchlist is empty</h3>
+                    <p class="text-sm text-gray-500 max-w-sm mx-auto mb-6">Start browsing titles and click "+ Add to List" to save movies and shows here.</p>
+                    <button onclick="switchTab('home')" class="px-6 py-2.5 rounded-xl bg-brand-600 text-white font-medium hover:bg-brand-500 transition text-sm">
+                        Explore Movies
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark-card border-t border-dark-border mt-auto py-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold text-sm">
+                    <i class="fa-solid fa-play"></i>
+                </span>
+                <span class="font-bold text-lg text-white">ORION STREAM</span>
+            </div>
+            <p class="text-xs text-gray-500 text-center md:text-left">
+                © 2026 Orion Stream Entertainment Inc. All rights reserved. UI Demo concept built with modern web tools.
+            </p>
+            <div class="flex items-center gap-6 text-gray-400 text-sm">
+                <a href="#" class="hover:text-brand-500 transition">Privacy</a>
+                <a href="#" class="hover:text-brand-500 transition">Terms of Service</a>
+                <a href="#" class="hover:text-brand-500 transition">Support</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Movie Details & Trailer Player Modal -->
+    <div id="movieModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+        <div class="relative bg-dark-card border border-dark-border rounded-3xl max-w-3xl w-full overflow-hidden shadow-2xl my-8">
+            <!-- Close Modal Button -->
+            <button onclick="closeMovieModal()" class="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition border border-white/10">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Video Player Header Box -->
+            <div class="relative h-64 sm:h-80 w-full bg-black flex items-center justify-center overflow-hidden">
+                <img id="modalBackdrop" src="" alt="Backdrop" class="absolute inset-0 w-full h-full object-cover opacity-60">
+                <div class="absolute inset-0 bg-gradient-to-t from-dark-card via-transparent to-black/40"></div>
+                
+                <!-- Mock Video Trailer Controls Overlay -->
+                <button id="modalPlayTrailerBtn" onclick="toggleMockVideo()" class="relative z-10 w-16 h-16 rounded-full bg-brand-600 hover:bg-brand-500 text-white flex items-center justify-center text-2xl shadow-xl glow-effect transition transform hover:scale-105">
+                    <i class="fa-solid fa-play ml-1"></i>
+                </button>
+
+                <!-- Fake Trailer Video Container (hidden by default) -->
+                <div id="videoContainer" class="hidden absolute inset-0 z-20 bg-black flex flex-col items-center justify-center">
+                    <div class="p-4 text-center">
+                        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-brand-500 mb-3"></i>
+                        <p class="text-sm font-semibold text-gray-200">Simulating High Quality Trailer Stream...</p>
+                        <p class="text-xs text-gray-400 mt-1">Playing HD Trailer Preview</p>
+                    </div>
+                    <button onclick="toggleMockVideo()" class="absolute bottom-4 right-4 px-4 py-2 bg-dark-card/90 text-white text-xs rounded-lg border border-dark-border">
+                        Close Preview
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Details -->
+            <div class="p-6 sm:p-8 space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span id="modalType" class="px-2.5 py-0.5 rounded-md bg-brand-600/30 text-brand-glow text-xs font-bold uppercase">Movie</span>
+                            <span id="modalYear" class="text-gray-400 text-sm">2024</span>
+                            <span id="modalDuration" class="text-gray-400 text-sm">2h 15m</span>
+                            <span id="modalRating" class="flex items-center gap-1 text-amber-400 text-sm font-semibold">
+                                <i class="fa-solid fa-star"></i> 8.5
+                            </span>
+                        </div>
+                        <h2 id="modalTitle" class="text-2xl sm:text-3xl font-extrabold text-white">Movie Title</h2>
+                    </div>
+                    <button id="modalWatchlistBtn" onclick="" class="px-5 py-2.5 rounded-xl bg-dark-accent hover:bg-brand-600 text-white text-sm font-medium transition flex items-center justify-center gap-2 border border-dark-border">
+                        <i class="fa-solid fa-plus"></i> Add to List
+                    </button>
+                </div>
+
+                <p id="modalOverview" class="text-gray-300 text-sm sm:text-base leading-relaxed">
+                    Detailed plot description goes here.
+                </p>
+
+                <div class="grid grid-cols-2 gap-4 pt-4 border-t border-dark-border/50 text-sm">
+                    <div>
+                        <span class="text-gray-500 block text-xs mb-1">Genres</span>
+                        <span id="modalGenres" class="text-gray-200 font-medium">Action, Sci-Fi</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 block text-xs mb-1">Cast</span>
+                        <span id="modalCast" class="text-gray-200 font-medium">Actor A, Actor B, Actor C</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Movie Assistant Modal -->
+    <div id="aiModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div class="relative bg-dark-card border border-dark-border rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl p-6 sm:p-8">
+            <button onclick="toggleAiModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-purple-600/30 text-purple-400 flex items-center justify-center">
+                    <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-white">AI Movie Recommendation</h3>
+                    <p class="text-xs text-gray-400">Powered by Gemini AI</p>
+                </div>
+            </div>
+
+            <p class="text-xs sm:text-sm text-gray-300 mb-4">
+                Tell us what you feel like watching (e.g., "A thrilling space mystery with plot twists" or "Lighthearted anime comedy").
+            </p>
+
+            <textarea id="aiPromptInput" rows="3" placeholder="Describe your mood or preferred movie plot..." 
+                class="w-full bg-dark-bg border border-dark-border rounded-xl p-3 text-sm text-gray-200 focus:outline-none focus:border-purple-500 mb-4 placeholder-gray-500 resize-none"></textarea>
+
+            <button onclick="fetchAiRecommendations()" id="aiSubmitBtn" class="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-brand-600 text-white font-bold text-sm hover:opacity-90 transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-sparkles"></i> Get Recommendations
+            </button>
+
+            <div id="aiResults" class="hidden mt-6 pt-4 border-t border-dark-border max-h-60 overflow-y-auto space-y-3">
+                <!-- AI results inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden flex items-center gap-3 bg-brand-600 text-white px-5 py-3 rounded-2xl shadow-xl transition transform">
+        <i class="fa-solid fa-circle-check text-lg"></i>
+        <span id="toastMsg" class="text-sm font-semibold">Action completed successfully</span>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // Data Store (Catalog of Movies & Shows)
+        const CATALOG = [
+            {
+                id: 'm1',
+                title: 'Cyberpunk 2099: Cyber Neon',
+                type: 'Movie',
+                genre: 'Action',
+                rating: 8.9,
+                year: 2024,
+                duration: '2h 24m',
+                poster: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&q=80&w=600',
+                backdrop: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=1200',
+                overview: 'In a neon-drenched futuristic metropolis, a cybernetically enhanced mercenary embarks on a rogue mission to rescue an AI soul.',
+                cast: 'Keanu Reeves, Ana de Armas, Ryan Gosling',
+                isFeatured: true
+            },
+            {
+                id: 'm2',
+                title: 'Chronicles of Stellar Nebula',
+                type: 'Movie',
+                genre: 'Action',
+                rating: 9.1,
+                year: 2023,
+                duration: '2h 45m',
+                poster: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=600',
+                backdrop: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200',
+                overview: 'When deep space explorers locate an ancient cosmic relic, they must protect humanity from interstellar forces craving absolute dominion.',
+                cast: 'Timothée Chalamet, Zendaya, Oscar Isaac',
+                isFeatured: true
+            },
+            {
+                id: 's1',
+                title: 'Shadows of the Dynasty',
+                type: 'Series',
+                genre: 'Drama',
+                rating: 8.8,
+                year: 2024,
+                duration: '3 Seasons',
+                poster: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&q=80&w=600',
+                backdrop: 'https://images.unsplash.com/photo-1514539079130-25950c84af65?auto=format&fit=crop&q=80&w=1200',
+                overview: 'Power, deception, and royal ambition collide in this gripping historical drama detailing the rise of an empire.',
+                cast: 'Florence Pugh, Benedict Cumberbatch, Emma D’Arcy',
+                isFeatured: true
+            },
+            {
+                id: 'm3',
+                title: 'Spectral Signal',
+                type: 'Movie',
+                genre: 'Horror',
+                rating: 7.9,
+                year: 2024,
+                duration: '1h 52m',
+                poster: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=600',
+                backdrop: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=1200',
+                overview: 'A late-night radio host receives mysterious frequencies from unknown paranormal entities calling for help.',
+                cast: 'Mia Goth, Daniel Kaluuya, Willem Dafoe',
+                isFeatured: false
+            },
+            {
+                id: 's2',
+                title: 'Neo Tokyo Drifters',
+                type: 'Series',
+                genre: 'Anime',
+                rating: 9.3,
+                year: 2025,
+                duration: '2 Seasons',
+                poster: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&q=80&w=600',
+                backdrop: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&q=80&w=1200',
+                overview: 'High-speed underground street racing meets futuristic cyber-enhanced vehicles in Tokyo’s underground rings.',
+                cast: 'Mamoru Miyano, Kana Hanazawa, Yuki Kaji',
+                isFeatured: false
+            },
+            {
+                id: 'm4',
+                title: 'The Laugh Protocol',
+                type: 'Movie',
+                genre: 'Comedy',
+                rating: 7.6,
+                year: 2023,
+                duration: '1h 38m',
+                poster: 'https://images.unsplash.com/photo-1514306191717-452ec28c7814?auto=format&fit=crop&q=80&w=600',
+                backdrop: 'https://images.unsplash.com/photo-1514306191717-452ec28c7814?auto=format&fit=crop&q=80&w=1200',
+                overview: 'Two mismatched undercover agents accidentally get enrolled in an elite stand-up comedy competition.',
+                cast: 'Ryan Reynolds, Kevin Hart, Awkwafina',
+                isFeatured: false
+            },
+            {
+                id: 's3',
+                title: 'Quantum Paradox',
+                type: 'Series',
+                genre: 'Action',
+                rating: 8.7,
+                year: 2024,
+                duration: '1 Season',
+                poster: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=600',
+                backdrop: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200',
+                overview: 'Physicists accidentally tear open timelines, colliding past and future historical figures in modern day Chicago.',
+                cast: 'Cillian Murphy, Elizabeth Debicki',
+                isFeatured: false
+            },
+            {
+                id: 'm5',
+                title: 'Echoes of the Abyss',
+                type: 'Movie',
+                genre: 'Drama',
+                rating: 8.4,
+                year: 2022,
+                duration: '2h 10m',
+                poster: 'https://images.unsplash.com/photo-1682687220063-4742bd7fd538?auto=format&fit=crop&q=80&w=600',
+                backdrop: 'https://images.unsplash.com/photo-1682687220063-4742bd7fd538?auto=format&fit=crop&q=80&w=1200',
+                overview: 'A deep-sea oceanographer encounters mysterious bioluminescent lifeforms deep inside the Mariana Trench.',
+                cast: 'Sigourney Weaver, Javier Bardem',
+                isFeatured: false
+            }
+        ];
+
+        // State Management
+        let watchlist = JSON.parse(localStorage.getItem('orion_watchlist') || '[]');
+        let currentHeroIndex = 0;
+        const heroItems = CATALOG.filter(item => item.isFeatured);
+        let activeTab = 'home';
+        let currentGenre = 'all';
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            renderHero();
+            renderCatalog();
+            updateWatchlistBadge();
+        });
+
+        // Hero Spotlight Render & Carousel
+        function renderHero() {
+            const item = heroItems[currentHeroIndex];
+            if (!item) return;
+
+            document.getElementById('heroBg').style.backgroundImage = `url('${item.backdrop}')`;
+            document.getElementById('heroTitle').innerText = item.title;
+            document.getElementById('heroDesc').innerText = item.overview;
+            document.getElementById('heroRating').innerHTML = `<i class="fa-solid fa-star"></i> ${item.rating}`;
+            document.getElementById('heroYear').innerText = item.year;
+            
+            const isSaved = watchlist.includes(item.id);
+            const heroWatchlistBtn = document.getElementById('heroWatchlistBtn');
+            heroWatchlistBtn.onclick = () => toggleWatchlist(item.id);
+            heroWatchlistBtn.innerHTML = isSaved 
+                ? `<i class="fa-solid fa-check text-green-400 text-lg"></i> In Watchlist`
+                : `<i class="fa-solid fa-plus text-lg"></i> Add to Watchlist`;
+
+            document.getElementById('heroPlayBtn').onclick = () => openMovieModal(item.id);
+        }
+
+        function nextHero() {
+            currentHeroIndex = (currentHeroIndex + 1) % heroItems.length;
+            renderHero();
+        }
+
+        function prevHero() {
+            currentHeroIndex = (currentHeroIndex - 1 + heroItems.length) % heroItems.length;
+            renderHero();
+        }
+
+        // Render Movie Cards Grids
+        function renderCatalog() {
+            const popularGrid = document.getElementById('popularMoviesGrid');
+            const seriesGrid = document.getElementById('tvSeriesGrid');
+            const topRatedGrid = document.getElementById('topRatedGrid');
+
+            const filtered = currentGenre === 'all' 
+                ? CATALOG 
+                : CATALOG.filter(item => item.genre.toLowerCase().includes(currentGenre.toLowerCase()));
+
+            popularGrid.innerHTML = filtered.filter(i => i.type === 'Movie').map(createMovieCard).join('');
+            seriesGrid.innerHTML = filtered.filter(i => i.type === 'Series').map(createMovieCard).join('');
+            topRatedGrid.innerHTML = [...filtered].sort((a,b) => b.rating - a.rating).map(createMovieCard).join('');
+        }
+
+        function createMovieCard(item) {
+            const isSaved = watchlist.includes(item.id);
+            return `
+                <div class="group relative bg-dark-card rounded-2xl overflow-hidden border border-dark-border/60 hover:border-brand-500/50 transition-all duration-300 hover:-translate-y-1.5 shadow-lg flex flex-col cursor-pointer" onclick="openMovieModal('${item.id}')">
+                    <div class="relative aspect-[2/3] w-full overflow-hidden bg-gray-900">
+                        <img src="${item.poster}" alt="${item.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        
+                        <!-- Top Badges -->
+                        <div class="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
+                            <span class="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold uppercase tracking-wider">
+                                ${item.type}
+                            </span>
+                            <span class="px-2 py-0.5 rounded-md bg-amber-500/90 text-black text-[11px] font-bold flex items-center gap-1">
+                                <i class="fa-solid fa-star"></i> ${item.rating}
+                            </span>
+                        </div>
+
+                        <!-- Hover Overlay with Actions -->
+                        <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3 p-4">
+                            <button onclick="event.stopPropagation(); openMovieModal('${item.id}')" class="w-12 h-12 rounded-full bg-brand-600 hover:bg-brand-500 text-white flex items-center justify-center text-lg shadow-lg">
+                                <i class="fa-solid fa-play ml-0.5"></i>
+                            </button>
+                            <button onclick="event.stopPropagation(); toggleWatchlist('${item.id}')" class="w-12 h-12 rounded-full glass-card hover:bg-white/20 text-white flex items-center justify-center text-lg">
+                                <i class="${isSaved ? 'fa-solid fa-check text-green-400' : 'fa-solid fa-plus'}"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-3.5 flex-grow flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-white text-sm sm:text-base line-clamp-1 group-hover:text-brand-glow transition-colors">${item.title}</h4>
+                            <p class="text-gray-400 text-xs mt-1 font-medium">${item.year} • ${item.genre}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Watchlist Functionality
+        function toggleWatchlist(id) {
+            if (watchlist.includes(id)) {
+                watchlist = watchlist.filter(item => item !== id);
+                showToast("Removed from your Watchlist");
+            } else {
+                watchlist.push(id);
+                showToast("Added to your Watchlist!");
+            }
+            localStorage.setItem('orion_watchlist', JSON.stringify(watchlist));
+            updateWatchlistBadge();
+            renderHero();
+            renderCatalog();
+            if (activeTab === 'watchlist') renderWatchlistSection();
+        }
+
+        function updateWatchlistBadge() {
+            document.getElementById('watchlist-badge').innerText = watchlist.length;
+        }
+
+        function renderWatchlistSection() {
+            const grid = document.getElementById('watchlistGrid');
+            const emptyMsg = document.getElementById('emptyWatchlistMsg');
+            
+            const savedItems = CATALOG.filter(item => watchlist.includes(item.id));
+            if (savedItems.length === 0) {
+                grid.innerHTML = '';
+                emptyMsg.classList.remove('hidden');
+            } else {
+                emptyMsg.classList.add('hidden');
+                grid.innerHTML = savedItems.map(createMovieCard).join('');
+            }
+        }
+
+        // Navigation Tabs Toggle
+        function switchTab(tab) {
+            activeTab = tab;
+            const contentSections = document.getElementById('contentSections');
+            const watchlistSection = document.getElementById('watchlistSection');
+            const searchResultsSection = document.getElementById('searchResultsSection');
+
+            // Reset navigation highlights
+            ['home', 'movies', 'series', 'watchlist'].forEach(t => {
+                const btn = document.getElementById(`nav-${t}`);
+                if (btn) {
+                    if (t === tab) {
+                        btn.className = "px-4 py-2 rounded-lg text-white bg-brand-600/30 font-semibold border border-brand-500/30 transition flex items-center gap-2";
+                    } else {
+                        btn.className = "px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-accent/50 transition flex items-center gap-2";
+                    }
+                }
+            });
+
+            searchResultsSection.classList.add('hidden');
+
+            if (tab === 'watchlist') {
+                contentSections.classList.add('hidden');
+                watchlistSection.classList.remove('hidden');
+                renderWatchlistSection();
+            } else {
+                watchlistSection.classList.add('hidden');
+                contentSections.classList.remove('hidden');
+                renderCatalog();
+            }
+        }
+
+        // Genre Filter Selection
+        function filterGenre(genre) {
+            currentGenre = genre;
+            document.querySelectorAll('.genre-btn').forEach(btn => {
+                btn.classList.remove('bg-brand-600', 'text-white');
+                btn.classList.add('bg-dark-card', 'text-gray-300');
+            });
+            event.target.classList.remove('bg-dark-card', 'text-gray-300');
+            event.target.classList.add('bg-brand-600', 'text-white');
+            renderCatalog();
+        }
+
+        // Live Search Handling
+        function handleSearch(query) {
+            const clearBtn = document.getElementById('clearSearchBtn');
+            const mainView = document.getElementById('mainContentView');
+            const searchResultsSection = document.getElementById('searchResultsSection');
+            const resultsGrid = document.getElementById('searchResultsGrid');
+            const searchCount = document.getElementById('searchResultCount');
+            const queryText = document.getElementById('searchQueryText');
+
+            if (!query.trim()) {
+                clearBtn.classList.add('hidden');
+                searchResultsSection.classList.add('hidden');
+                mainView.classList.remove('hidden');
+                return;
+            }
+
+            clearBtn.classList.remove('hidden');
+            mainView.classList.add('hidden');
+            searchResultsSection.classList.remove('hidden');
+
+            const matches = CATALOG.filter(item => 
+                item.title.toLowerCase().includes(query.toLowerCase()) ||
+                item.genre.toLowerCase().includes(query.toLowerCase()) ||
+                item.cast.toLowerCase().includes(query.toLowerCase())
+            );
+
+            queryText.innerText = query;
+            searchCount.innerText = `${matches.length} titles found`;
+            resultsGrid.innerHTML = matches.length > 0 
+                ? matches.map(createMovieCard).join('')
+                : `<div class="col-span-full py-12 text-center text-gray-400">No movies found matching "${query}"</div>`;
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            handleSearch('');
+        }
+
+        // Movie Details Modal logic
+        function openMovieModal(id) {
+            const item = CATALOG.find(i => i.id === id);
+            if (!item) return;
+
+            document.getElementById('modalBackdrop').src = item.backdrop;
+            document.getElementById('modalTitle').innerText = item.title;
+            document.getElementById('modalType').innerText = item.type;
+            document.getElementById('modalYear').innerText = item.year;
+            document.getElementById('modalDuration').innerText = item.duration;
+            document.getElementById('modalRating').innerHTML = `<i class="fa-solid fa-star"></i> ${item.rating}`;
+            document.getElementById('modalOverview').innerText = item.overview;
+            document.getElementById('modalGenres').innerText = item.genre;
+            document.getElementById('modalCast').innerText = item.cast;
+
+            const isSaved = watchlist.includes(item.id);
+            const btn = document.getElementById('modalWatchlistBtn');
+            btn.onclick = () => toggleWatchlist(item.id);
+            btn.innerHTML = isSaved 
+                ? `<i class="fa-solid fa-check text-green-400"></i> In Watchlist`
+                : `<i class="fa-solid fa-plus"></i> Add to List`;
+
+            document.getElementById('movieModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMovieModal() {
+            document.getElementById('movieModal').classList.add('hidden');
+            document.getElementById('videoContainer').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function toggleMockVideo() {
+            const container = document.getElementById('videoContainer');
+            container.classList.toggle('hidden');
+        }
+
+        // AI Assistant Modal & Gemini API Integration
+        function toggleAiModal() {
+            const modal = document.getElementById('aiModal');
+            modal.classList.toggle('hidden');
+        }
+
+        async function fetchAiRecommendations() {
+            const input = document.getElementById('aiPromptInput').value;
+            const resultsContainer = document.getElementById('aiResults');
+            const submitBtn = document.getElementById('aiSubmitBtn');
+
+            if (!input.trim()) return;
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Finding Recommendations...`;
+
+            try {
+                const systemPrompt = "You are Orion AI Movie Recommendation assistant. Based on user preferences, suggest 2-3 creative movie concepts or titles from classic/popular cinema. Keep descriptions short and punchy (1 sentence each). Output clean markdown.";
+                const apiKey = ""; // Canvas handles API key insertion at runtime
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: input }] }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] }
+                    })
+                });
+
+                const data = await response.json();
+                const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Unable to generate recommendations right now.";
+
+                resultsContainer.innerHTML = `
+                    <div class="bg-dark-bg p-4 rounded-xl text-xs sm:text-sm text-gray-200 leading-relaxed border border-purple-500/20">
+                        ${reply.replace(/\n/g, '<br>')}
+                    </div>
+                `;
+                resultsContainer.classList.remove('hidden');
+            } catch (err) {
+                resultsContainer.innerHTML = `<div class="text-red-400 text-xs">Failed to load AI recommendations. Check connection.</div>`;
+                resultsContainer.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i class="fa-solid fa-sparkles"></i> Get Recommendations`;
+            }
+        }
+
+        // Toast Feedback Notification
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
